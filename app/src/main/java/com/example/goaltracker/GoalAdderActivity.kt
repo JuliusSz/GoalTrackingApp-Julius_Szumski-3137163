@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.annotation.experimental.Experimental
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,7 +16,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
@@ -64,13 +68,13 @@ class GoalAdderActivity : ComponentActivity() {
                     OutlinedTextField(value = descContent, onValueChange = {descContent = it}, modifier = Modifier.fillMaxWidth(0.90f).then(Modifier.fillMaxHeight(0.75f)) )
                 }
                 Spacer(modifier = Modifier.weight(1f))
-                Navigation(titleContent,descContent)
+                //Navigation(titleContent,descContent,)
             }
         }
     }
 
     @Composable
-    fun Navigation(title:String,desc:String){
+    fun Navigation(title:String,desc:String,gltype : GoalType){
         var current = LocalContext.current
         Row( modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly){
@@ -78,9 +82,9 @@ class GoalAdderActivity : ComponentActivity() {
                 modifier =  Modifier.padding(20.dp),
                 onClick = {
                     if (title !=""){
-                        var tempGoal = Goal(title, desc)
+                        var tempGoal = Goal(title, desc, gltype)
                         var intent = Intent(current,MainActivity::class.java)
-                        //intent.putExtra("newgoal",tempGoal)
+                        intent.putExtra("newgoal",tempGoal)
                         startActivity(intent)
                     }else{
                         Toast.makeText(current, "Please don't Leave the title empty", Toast.LENGTH_LONG).show()
@@ -97,6 +101,46 @@ class GoalAdderActivity : ComponentActivity() {
                 }
             ) {
                 Text(text = "Cancel")
+            }
+        }
+    }
+
+
+
+    @Preview
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalStdlibApi::class)
+    @Composable
+    fun DropDownExample() {
+        val options = GoalType.values()
+        var expanded by remember { mutableStateOf(false) }
+        var selectedOptionText by remember { mutableStateOf(options[0]) }
+
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = !expanded },
+        ) {
+            TextField(
+                value = selectedOptionText.name,
+                modifier = Modifier.menuAnchor(),
+                readOnly = true,
+                onValueChange = {},
+                label = { Text("Label") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                colors = ExposedDropdownMenuDefaults.textFieldColors(),
+            )
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+            ) {
+                options.forEach { selectionOption ->
+                    DropdownMenuItem(
+                        text = { Text(selectionOption.name) },
+                        onClick = {
+                            selectedOptionText = selectionOption
+                            expanded = false
+                        },
+                    )
+                }
             }
         }
     }

@@ -3,10 +3,12 @@ package com.example.goaltracker
 import android.content.Intent
 import android.graphics.fonts.Font
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivityResultRegistryOwner.current
 import androidx.activity.compose.setContent
 import androidx.annotation.XmlRes
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -20,10 +22,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonElevation
@@ -38,18 +42,27 @@ import androidx.compose.runtime.internal.composableLambdaInstance
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.goaltracker.ui.theme.GoalTrackerTheme
+import java.io.Serializable
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        var listOfGoals = listOf<Goal>()
+        var listOfGoals = ArrayList<Goal>()
+        var tempGoal = intent.getSerializableExtra("newgoal")
+        if(tempGoal != null){
+            Toast.makeText(this, "Goal Goal has been added", Toast.LENGTH_LONG).show()
+            listOfGoals.add(tempGoal as Goal)
+        }else{
+            Toast.makeText(this, "Goal Was Empty", Toast.LENGTH_LONG).show()
+        }
         setContent {
             Column {
                 Text(
@@ -77,7 +90,9 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun CreateGoalItem(goal: Goal){
-        Row {
+        Row(
+            modifier = Modifier.border( 2.dp,color = Color.Black,  shape = RoundedCornerShape(4.dp)).padding(PaddingValues(horizontal = 8.dp))
+        ) {
             val thisItemGoal = goal
             Text(text = goal.title, Modifier.fillMaxWidth(0.75f))
             Button(onClick = {  }) {
@@ -99,6 +114,7 @@ class MainActivity : ComponentActivity() {
                     startActivity(intent)
                 }) {
                 Icon(Icons.Filled.Add, "Add a New Goal" )
+                
             }
         }
     }
@@ -136,7 +152,11 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-class Goal(title:String, desc: String){
+enum class GoalType(val goalType : String){
+    CheckMark("checked")
+}
+class Goal(title:String, desc: String, glType: GoalType):Serializable{
+    var goaltype : GoalType = glType
     var title : String = title
     var description : String = desc
     var completed = false
