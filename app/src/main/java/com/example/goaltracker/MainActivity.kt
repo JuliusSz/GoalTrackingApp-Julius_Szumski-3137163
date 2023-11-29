@@ -1,6 +1,7 @@
 package com.example.goaltracker
 
 import DatabaseManager
+import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
@@ -13,6 +14,7 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivityResultRegistryOwner.current
@@ -59,6 +61,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.time.LocalDate
+import java.util.Date
 
 
 class MainActivity : ComponentActivity(),SensorEventListener {
@@ -66,9 +70,11 @@ class MainActivity : ComponentActivity(),SensorEventListener {
     private var listOfGoals = ArrayList<Goal>()
     private lateinit var  databaseManager :DatabaseManager
     private lateinit var  database: SQLiteDatabase
+    @SuppressLint("NewApi")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+            listOfGoals.add(Goal("Test","",GoalType.CheckMark,null,Date(2023,11,29)))
             Column {
                 Text(
                     "Goals",
@@ -79,7 +85,14 @@ class MainActivity : ComponentActivity(),SensorEventListener {
                     itemsIndexed(
                         listOfGoals
                     ){index, goal ->
-                        CreateGoalItem(goal = goal)
+                        val currentDate = Date(LocalDate.now().year,LocalDate.now().monthValue,LocalDate.now().dayOfMonth)
+                        if(goal.enddate < currentDate || goal.completed){
+                            goal.archived = true
+                        }
+                        if(goal.archived == false){
+                            CreateGoalItem(goal = goal)
+                        }
+
                     }
 
                 }
@@ -193,7 +206,7 @@ class MainActivity : ComponentActivity(),SensorEventListener {
                 },
                 shape = RectangleShape
             ) {
-                Text(text = "Statistics")
+                Text(text = "History")
 
             }
         }
@@ -210,14 +223,23 @@ class MainActivity : ComponentActivity(),SensorEventListener {
     }
 }
 
-enum class GoalType(val goalType : String){
+enum class GoalType(val goalType : String) : MutableState<GoalType> {
     CheckMark("checked"),
-    stepCounter("stepCounter")
+    stepCounter("stepCounter");
+
+    override var value: GoalType = this
+        set(value){
+        }
+
+    override fun component1(): GoalType = value
+
+    override fun component2(): (GoalType) -> Unit = { newValue -> value = newValue }
+
 }
 
 
-class Goal(val title: String, val desc: String, val glType: GoalType, val stepGoal: Int?,){
-
+class Goal(val title: String, val desc: String, val glType: GoalType, val stepGoal: Int?, val enddate: Date){
+    var archived: Boolean = false
     private var sensorManager: SensorManager?= null
     var completed: Boolean = false
     var progress: Int = 0
