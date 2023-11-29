@@ -1,6 +1,9 @@
 package com.example.goaltracker
 
+import DatabaseManager
+import android.content.ContentValues
 import android.content.Intent
+import android.database.sqlite.SQLiteDatabase
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -41,6 +44,8 @@ import com.example.goaltracker.ui.theme.GoalTrackerTheme
 
 class GoalAdderActivity : ComponentActivity() {
 
+    private lateinit var  databaseManager :DatabaseManager
+    private lateinit var  database: SQLiteDatabase
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -71,6 +76,8 @@ class GoalAdderActivity : ComponentActivity() {
                 //Navigation(titleContent,descContent,)
             }
         }
+        databaseManager = DatabaseManager(this, "tasks.db",null , version = 1)
+        database = databaseManager.writableDatabase
     }
 
     @Composable
@@ -82,10 +89,10 @@ class GoalAdderActivity : ComponentActivity() {
                 modifier =  Modifier.padding(20.dp),
                 onClick = {
                     if (title !=""){
-                        var tempGoal = Goal(title, desc, gltype)
+                        addData(Goal(title, desc, gltype,null))
                         var intent = Intent(current,MainActivity::class.java)
-                        intent.putExtra("newgoal",tempGoal)
-                        startActivity(intent)
+
+                        (intent)
                     }else{
                         Toast.makeText(current, "Please don't Leave the title empty", Toast.LENGTH_LONG).show()
                     }
@@ -105,7 +112,12 @@ class GoalAdderActivity : ComponentActivity() {
         }
     }
 
-
+    fun addData(task: Goal){
+        val taskToBeAdded : ContentValues = ContentValues().apply{
+            put("task", task as ByteArray)
+        }
+        database.insert("tasks",null, taskToBeAdded)
+    }
 
     @Preview
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalStdlibApi::class)

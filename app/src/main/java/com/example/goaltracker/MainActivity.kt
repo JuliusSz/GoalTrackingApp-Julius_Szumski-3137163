@@ -1,12 +1,23 @@
 package com.example.goaltracker
 
+import DatabaseManager
+import android.content.ContentValues
+import android.content.Context
 import android.content.Intent
+import android.database.Cursor
+import android.database.sqlite.SQLiteDatabase
 import android.graphics.fonts.Font
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivityResultRegistryOwner.current
 import androidx.activity.compose.setContent
+import androidx.annotation.RequiresApi
 import androidx.annotation.XmlRes
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -48,21 +59,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.goaltracker.ui.theme.GoalTrackerTheme
-import java.io.Serializable
 
-class MainActivity : ComponentActivity() {
 
+class MainActivity : ComponentActivity(),SensorEventListener {
+
+    private var listOfGoals = ArrayList<Goal>()
+    private lateinit var  databaseManager :DatabaseManager
+    private lateinit var  database: SQLiteDatabase
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        var listOfGoals = ArrayList<Goal>()
-        var tempGoal = intent.getSerializableExtra("newgoal")
-        if(tempGoal != null){
-            Toast.makeText(this, "Goal Goal has been added", Toast.LENGTH_LONG).show()
-            listOfGoals.add(tempGoal as Goal)
-        }else{
-            Toast.makeText(this, "Goal Was Empty", Toast.LENGTH_LONG).show()
-        }
         setContent {
             Column {
                 Text(
@@ -83,9 +88,40 @@ class MainActivity : ComponentActivity() {
                 AddGoalButton()
                 Navigation()
             }
-
-
         }
+        databaseManager = DatabaseManager(this, "tasks.db",null , version = 1)
+        database = databaseManager.writableDatabase
+    }
+
+    override fun onResume(){
+        super.onResume()
+        listOfGoals = retriveData()
+
+    }
+
+
+    private fun retriveData() : ArrayList<Goal>{
+        val table = "tasks"
+        val columns: Array<String> = arrayOf("Id","task")
+        val cursor: Cursor = database.query(table,columns,null,null,null,null, null )
+        val goalList = ArrayList<Goal>()
+        cursor.moveToFirst()
+        for (i in 0 until cursor.count){
+            goalList.add(cursor.getBlob(1) as Goal)
+        }
+        return goalList
+    }
+    fun addData(task: Goal){
+        val taskToBeAdded : ContentValues = ContentValues().apply{
+            put("task", task as ByteArray)
+        }
+        database.insert("tasks",null, taskToBeAdded)
+    }
+    private fun updateData(updatedTask: Goal,id: Int){
+        val taskToBeUpdated : ContentValues = ContentValues().apply{
+            put("task", updatedTask as ByteArray)
+        }
+        database.update("tasks", taskToBeUpdated, "ID =",arrayOf(id.toString()))
     }
 
     @Composable
@@ -116,6 +152,18 @@ class MainActivity : ComponentActivity() {
                 Icon(Icons.Filled.Add, "Add a New Goal" )
                 
             }
+        }
+    }
+
+    @Composable
+    fun trackStepsForGoal(){
+        val context = LocalContext.current
+        val sensorManager = context.getSystemService(SENSOR_SERVICE) as SensorManager
+        val stepCounter: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
+        if(stepCounter == null){
+            Toast.makeText(context, "Step Sensor not Found", Toast.LENGTH_LONG).show()
+        }else{
+            sensorManager.registerListener(this,stepCounter,SensorManager.SENSOR_DELAY_NORMAL)
         }
     }
     @Preview
@@ -150,14 +198,27 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    override fun onSensorChanged(event: SensorEvent?) {
+        if(event?.sensor?.getType() == Sensor.TYPE_STEP_COUNTER){
+
+        }
+    }
+
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+        TODO("Not yet implemented")
+    }
 }
 
 enum class GoalType(val goalType : String){
-    CheckMark("checked")
+    CheckMark("checked"),
+    stepCounter("stepCounter")
 }
-class Goal(title:String, desc: String, glType: GoalType):Serializable{
-    var goaltype : GoalType = glType
-    var title : String = title
-    var description : String = desc
-    var completed = false
+
+
+class Goal(val title: String, val desc: String, val glType: GoalType, val stepGoal: Int?,){
+
+    private var sensorManager: SensorManager?= null
+    var completed: Boolean = false
+    var progress: Int = 0
 }
