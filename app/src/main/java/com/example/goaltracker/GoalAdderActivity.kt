@@ -47,6 +47,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.goaltracker.ui.theme.GoalTrackerTheme
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.util.Calendar
 import java.util.Date
 
@@ -55,7 +57,7 @@ class GoalAdderActivity : ComponentActivity() {
     private lateinit var  databaseManager :DatabaseManager
     private lateinit var  database: SQLiteDatabase
     @OptIn(ExperimentalMaterial3Api::class)
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?) {                                            // Creates an Interface to easily add Goals
         super.onCreate(savedInstanceState)
 
         setContent {
@@ -68,7 +70,7 @@ class GoalAdderActivity : ComponentActivity() {
                 Row( modifier = Modifier
                     .fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly){
-                    OutlinedTextField(value = titleContent, onValueChange = {titleContent = it}, modifier = Modifier.fillMaxWidth(0.90f))
+                    OutlinedTextField(value = titleContent, onValueChange = {titleContent = it}, modifier = Modifier.fillMaxWidth(0.90f))  //text field for title
                 }
                 val options = GoalType.values()
                 var selectedOptionText by remember {
@@ -77,7 +79,7 @@ class GoalAdderActivity : ComponentActivity() {
                 Row( modifier = Modifier
                     .fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly){
-                   goalPicker(options,selectedOptionText)
+                   goalPicker(options,selectedOptionText)                                           //Dropdown Menu to Pick the type of Goal the User wants to create
                 }
                 Text(text = "Description:")
                 var descContent by remember{
@@ -86,7 +88,7 @@ class GoalAdderActivity : ComponentActivity() {
                 Row( modifier = Modifier
                     .fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly){
-                    OutlinedTextField(value = descContent, onValueChange = {descContent = it}, modifier = Modifier.fillMaxWidth(0.90f).then(Modifier.fillMaxHeight(0.75f)) )
+                    OutlinedTextField(value = descContent, onValueChange = {descContent = it}, modifier = Modifier.fillMaxWidth(0.90f).then(Modifier.fillMaxHeight(0.75f)) )//text field for Description
                 }
                 val selectedDate = remember{
                     mutableStateOf(Date())
@@ -94,16 +96,16 @@ class GoalAdderActivity : ComponentActivity() {
                 Row( modifier = Modifier
                     .fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly){
-                    calender(LocalContext.current,selectedDate)
+                    calender(LocalContext.current,selectedDate)                                     // Adds a Calender, so the User can pick a Deadline for thier Goal
                 }
-                Navigation(titleContent,descContent,selectedOptionText,selectedDate.value)
+                Navigation(titleContent,descContent,selectedOptionText,selectedDate.value)          // Adds the Save and Cancel Button
             }
         }
         databaseManager = DatabaseManager(this, "tasks.db",null , version = 1)
         database = databaseManager.writableDatabase
     }
     @Composable
-    fun calender(context: Context, date: MutableState<Date>){
+    fun calender(context: Context, date: MutableState<Date>){                                       //Creates the Calender and temporarily stores the chosen Date
         val year: Int
         val month: Int
         val day: Int
@@ -123,22 +125,26 @@ class GoalAdderActivity : ComponentActivity() {
             Text(text = "Selected Date: " + date.value.date+ "/" + date.value.month +"/" + date.value.year)
             Spacer(Modifier.size(16.dp))
             Button(onClick = { datePickerDialog.show() }) {
-                Text(text = "Chose till when you want to complete the Task")
+                Text(text = "Select a Deadline")
             }
         }
     }
 
     @Composable
-    fun Navigation(title:String,desc:String,gltype : GoalType, endDate: Date){
+    fun Navigation(title:String,desc:String,gltype : GoalType, endDate: Date){                                  //Adds Navigation
+        val text = remember { mutableStateOf("foo") }
         var current = LocalContext.current
         Row( modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly){
             FloatingActionButton(
                 modifier =  Modifier.padding(20.dp),
                 onClick = {
-                    if (title !=""){
-                        addData(Goal(title, desc, gltype,null, endDate))
-                        finish()
+                    if (title !=""){                                                                            // Saves the new Goal to the Database if the Title is not Empty
+                        endDate.year -= 1900;
+                        val goalToAdd =Goal(0, title,desc,gltype,null,endDate)
+                        addData(goalToAdd)
+                        text.value="bar"
+                        finish()                                                                                 //returns to the Main Activity
                     }else{
                         Toast.makeText(current, "Please don't Leave the title empty", Toast.LENGTH_LONG).show()
                     }
@@ -149,7 +155,7 @@ class GoalAdderActivity : ComponentActivity() {
             FloatingActionButton(
                 modifier =  Modifier.padding(20.dp),
                 onClick = {
-                    finish()
+                    finish()                                                                                    //returns to the Main Activity
                 }
             ) {
                 Text(text = "Cancel")
@@ -157,16 +163,23 @@ class GoalAdderActivity : ComponentActivity() {
         }
     }
 
-    fun addData(task: Goal){
+    private fun addData(task: Goal){                                                                            // adds Data to the Database
         val taskToBeAdded : ContentValues = ContentValues().apply{
-            put("task", task as ByteArray) // Bugged
+            put("title",task.title )
+            put("description",task.desc)
+            put("Goaltype",task.glType.toString())
+            put("EndDate",task.enddate.toString())
+            put("Progress",task.progress )
+            put("taskGoal",task.taskGoal )
+            put("completed",task.completed)
+            put("Archived",task.archived )
         }
         database.insert("tasks",null, taskToBeAdded)
     }
 
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalStdlibApi::class)
     @Composable
-    fun goalPicker(options: Array<GoalType>, selectedOptionsText: MutableState<GoalType>) {
+    fun goalPicker(options: Array<GoalType>, selectedOptionsText: MutableState<GoalType>) {         //Creates a Dropdown menu
         var expanded by remember { mutableStateOf(false) }
 
         ExposedDropdownMenuBox(

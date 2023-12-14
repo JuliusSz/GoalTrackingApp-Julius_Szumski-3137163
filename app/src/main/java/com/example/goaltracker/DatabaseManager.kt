@@ -13,6 +13,6 @@ class DatabaseManager(context: Context, name: String, factory: SQLiteDatabase.Cu
         db?.execSQL(createCommand)
     }
 
-    private val createCommand = "Create Table Tasks(Id INTEGER Primary Key AUTOINCREMENT , task BLOB)"
-    private val dropCommand = ""
+    private val createCommand = "Create Table Tasks(Id INTEGER Primary Key AUTOINCREMENT ,title TEXT, description TEXT, Goaltype TEXT, EndDate DATE, Progress INTEGER, taskGoal INTEGER, completed BOOLEAN, Archived BOOLEAN )"
+    private val dropCommand = "Drop Table Tasks"
 }

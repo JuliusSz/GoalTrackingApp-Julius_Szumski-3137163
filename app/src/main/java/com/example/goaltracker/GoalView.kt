@@ -16,7 +16,7 @@ class GoalView : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-
+            //Would add an overview to your Goal
         }
     }
 }
