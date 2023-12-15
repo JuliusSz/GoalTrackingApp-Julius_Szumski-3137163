@@ -5,7 +5,6 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.os.Build
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi

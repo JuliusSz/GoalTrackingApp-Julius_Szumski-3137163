@@ -128,7 +128,6 @@ class MainActivity : ComponentActivity(),SensorEventListener {
     @Composable
     @RequiresApi(Build.VERSION_CODES.O)
     private fun manageStepCounter(){                                                                //Manages the Stepcounter, Creates a new one when the previous one expired
-        Toast.makeText(this, "Did someone even Bother?", Toast.LENGTH_LONG).show()
         val table = "Tasks"
         val columns: Array<String> = arrayOf("Id","title","description","Goaltype","EndDate","Progress","taskGoal","completed","Archived")
         val cursor: Cursor = database.query(table,columns, "Archived = ? AND Goaltype = ?", arrayOf("0","stepCounter"),null,null, null )
@@ -294,7 +293,6 @@ class MainActivity : ComponentActivity(),SensorEventListener {
             listOfActiveGoals.forEach { goal ->
                 if(goal.glType == GoalType.stepCounter){
                     if(goal.progress > goal.taskGoal!!){
-                        Toast.makeText(this, "there was a steppy step", Toast.LENGTH_LONG).show()
                         goal.completed = true
                         goal.archived = true
                         updateData(goal)
